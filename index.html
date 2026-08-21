@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Application</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --navy: #0a1f3d;
+            --navy-light: #143059;
+            --green: #1e9c52;
+            --green-light: #2ecc71;
+            --white: #ffffff;
+            --cream: #f8fafc;
+            --gray: #64748b;
+            --light-gray: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--white);
+            overflow-x: hidden;
+            color: var(--navy);
+        }
+
+        /* Splash */
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: var(--navy);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1), visibility 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+        .splash-ring {
+            width: 120px; height: 120px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            position: relative;
+            animation: ringPulse 2s ease-in-out infinite;
+        }
+        .splash-ring::before {
+            content: ''; position: absolute; inset: 15px;
+            border: 1px solid rgba(30, 156, 82, 0.3);
+            border-radius: 50%;
+            animation: ringPulse 2s ease-in-out 0.5s infinite;
+        }
+        .splash-ring::after {
+            content: ''; position: absolute; inset: 30px;
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 50%;
+            animation: ringPulse 2s ease-in-out 1s infinite;
+        }
+        .splash-icon {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 36px; height: 36px;
+        }
+        .splash-icon svg {
+            width: 100%; height: 100%;
+            stroke: var(--green-light); stroke-width: 1.5; fill: none;
+            stroke-linecap: round; stroke-linejoin: round;
+        }
+        .splash-brand {
+            margin-top: 48px; text-align: center; overflow: hidden;
+        }
+        .splash-brand h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.2rem; font-weight: 700; color: var(--white);
+            letter-spacing: 4px; text-transform: uppercase;
+            opacity: 0; transform: translateY(30px);
+            animation: revealUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+        }
+        .splash-brand p {
+            font-family: 'Inter', sans-serif; font-size: 0.8rem; font-weight: 300;
+            color: rgba(255,255,255,0.5); letter-spacing: 6px; text-transform: uppercase;
+            margin-top: 10px; opacity: 0; transform: translateY(20px);
+            animation: revealUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.6s forwards;
+        }
+        .splash-line {
+            width: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--green-light), transparent);
+            margin-top: 24px;
+            animation: lineExpand 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.9s forwards;
+        }
+        .splash-dots { display: flex; gap: 8px; margin-top: 32px; }
+        .splash-dots span {
+            width: 6px; height: 6px; background: var(--green-light);
+            border-radius: 50%; opacity: 0;
+            animation: dotFade 1.4s ease-in-out infinite;
+        }
+        .splash-dots span:nth-child(1) { animation-delay: 1.2s; }
+        .splash-dots span:nth-child(2) { animation-delay: 1.4s; }
+        .splash-dots span:nth-child(3) { animation-delay: 1.6s; }
+
+        @keyframes ringPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.7; }
+        }
+        @keyframes revealUp { to { opacity: 1; transform: translateY(0); } }
+        @keyframes lineExpand { to { width: 120px; } }
+        @keyframes dotFade {
+            0%, 100% { opacity: 0.2; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Pages */
+        .page { display: none; opacity: 0; transition: opacity 0.5s ease; }
+        .page.active { display: block; opacity: 1; }
+
+        /* Nav */
+        nav {
+            position: fixed; top: 0; width: 100%; padding: 0 60px; height: 80px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+            z-index: 1000; border-bottom: 1px solid rgba(10,31,61,0.05);
+        }
+        .logo {
+            display: flex; align-items: center; gap: 12px;
+            text-decoration: none; cursor: pointer;
+        }
+        .logo-mark {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--navy), var(--green));
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        }
+        .logo-mark svg { width: 20px; height: 20px; stroke: white; stroke-width: 2; fill: none; }
+        .logo-text {
+            font-family: 'Playfair Display', serif; font-size: 1.4rem;
+            font-weight: 700; color: var(--navy);
+        }
+        .logo-text span { color: var(--green); font-weight: 600; }
+        .nav-links { display: flex; gap: 40px; list-style: none; }
+        .nav-links a {
+            text-decoration: none; color: var(--gray); font-size: 0.9rem;
+            font-weight: 500; letter-spacing: 0.5px; position: relative;
+            transition: color 0.3s; cursor: pointer;
+        }
+        .nav-links a::after {
+            content: ''; position: absolute; bottom: -6px; left: 0;
+            width: 0; height: 2px; background: var(--green);
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-links a:hover { color: var(--navy); }
+        .nav-links a:hover::after { width: 100%; }
+        .nav-cta {
+            background: var(--navy); color: var(--white); padding: 12px 32px;
+            border-radius: 8px; text-decoration: none; font-size: 0.85rem;
+            font-weight: 600; letter-spacing: 0.5px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer; border: none; font-family: 'Inter', sans-serif;
+        }
+        .nav-cta:hover {
+            background: var(--green); transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(30, 156, 82, 0.25);
+        }
+
+        /* Hero */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            padding: 140px 60px 100px;
+            background: linear-gradient(165deg, var(--white) 0%, var(--cream) 50%, #eef5f0 100%);
+            position: relative; overflow: hidden;
+        }
+        .hero-bg-shape {
+            position: absolute; top: -10%; right: -5%;
+            width: 700px; height: 700px;
+            background: linear-gradient(135deg, rgba(10,31,61,0.03), rgba(30,156,82,0.06));
+            border-radius: 50%; animation: floatShape 8s ease-in-out infinite;
+        }
+        .hero-bg-shape-2 {
+            position: absolute; bottom: -20%; left: -10%;
+            width: 500px; height: 500px;
+            background: linear-gradient(135deg, rgba(30,156,82,0.04), rgba(10,31,61,0.02));
+            border-radius: 50%; animation: floatShape 10s ease-in-out infinite reverse;
+        }
+        @keyframes floatShape {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(5deg); }
+        }
+        .hero-inner { max-width: 900px; margin: 0 auto; width: 100%; text-align: center; position: relative; z-index: 1; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(30, 156, 82, 0.08); color: var(--green);
+            padding: 8px 18px; border-radius: 50px; font-size: 0.8rem;
+            font-weight: 600; letter-spacing: 0.5px; margin-bottom: 28px;
+            opacity: 0; transform: translateY(20px);
+            animation: fadeUp 0.7s ease forwards 0.2s;
+        }
+        .hero-badge::before {
+            content: ''; width: 6px; height: 6px;
+            background: var(--green); border-radius: 50%;
+        }
+        .hero h1 {
+            font-family: 'Playfair Display', serif; font-size: 4rem;
+            font-weight: 700; line-height: 1.1; color: var(--navy);
+            margin-bottom: 24px; opacity: 0; transform: translateY(30px);
+            animation: fadeUp 0.8s ease forwards 0.4s;
+        }
+        .hero h1 .accent { color: var(--green); position: relative; }
+        .hero h1 .accent::after {
+            content: ''; position: absolute; bottom: 4px; left: 0;
+            width: 100%; height: 12px; background: rgba(30, 156, 82, 0.12);
+            z-index: -1; border-radius: 2px;
+        }
+        .hero-desc {
+            font-size: 1.15rem; line-height: 1.8; color: var(--gray);
+            margin-bottom: 40px; max-width: 560px; margin-left: auto; margin-right: auto;
+            opacity: 0; transform: translateY(20px);
+            animation: fadeUp 0.8s ease forwards 0.6s;
+        }
+        .hero-actions {
+            display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+            opacity: 0; transform: translateY(20px);
+            animation: fadeUp 0.8s ease forwards 0.8s;
+        }
+        .btn-primary {
+            background: var(--navy); color: var(--white); padding: 16px 36px;
+            border-radius: 10px; text-decoration: none; font-weight: 600;
+            font-size: 0.95rem; letter-spacing: 0.3px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex; align-items: center; gap: 8px;
+            border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+        .btn-primary:hover {
+            background: var(--green); transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(30, 156, 82, 0.25);
+        }
+        .btn-ghost {
+            background: transparent; color: var(--navy); padding: 16px 36px;
+            border-radius: 10px; text-decoration: none; font-weight: 600;
+            font-size: 0.95rem; border: 1.5px solid rgba(10,31,61,0.15);
+            transition: all 0.3s; display: inline-flex; align-items: center;
+            gap: 8px; cursor: pointer; font-family: 'Inter', sans-serif;
+        }
+        .btn-ghost:hover { border-color: var(--navy); background: rgba(10,31,61,0.03); }
+        @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+        /* Trust Bar */
+        .trust-bar { background: var(--navy); padding: 40px 60px; }
+        .trust-inner {
+            max-width: 1200px; margin: 0 auto;
+            display: flex; justify-content: space-around; align-items: center;
+            flex-wrap: wrap; gap: 30px;
+        }
+        .trust-item { text-align: center; color: rgba(255,255,255,0.6); }
+        .trust-item strong {
+            display: block; font-size: 1.8rem; font-weight: 700;
+            color: var(--white); font-family: 'Playfair Display', serif;
+        }
+        .trust-item span { font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; margin-top: 4px; display: block; }
+
+        /* Features */
+        .features { padding: 120px 60px; background: var(--white); }
+        .features-inner { max-width: 1200px; margin: 0 auto; }
+        .section-label {
+            text-align: center; color: var(--green); font-size: 0.8rem;
+            font-weight: 600; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 16px;
+        }
+        .section-title {
+            text-align: center; font-family: 'Playfair Display', serif;
+            font-size: 2.8rem; font-weight: 700; color: var(--navy); margin-bottom: 16px;
+        }
+        .section-sub {
+            text-align: center; color: var(--gray); font-size: 1.05rem;
+            max-width: 500px; margin: 0 auto 70px; line-height: 1.7;
+        }
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+        .feature-card {
+            padding: 48px 36px; border-radius: 20px; background: var(--cream);
+            border: 1px solid rgba(10,31,61,0.04);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        .feature-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 3px;
+            background: linear-gradient(90deg, var(--navy), var(--green));
+            transform: scaleX(0); transform-origin: left;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 60px rgba(10,31,61,0.08);
+            background: var(--white);
+        }
+        .feature-card:hover::before { transform: scaleX(1); }
+        .feature-num {
+            font-family: 'Playfair Display', serif; font-size: 3rem;
+            font-weight: 700; color: rgba(10,31,61,0.06); line-height: 1; margin-bottom: 20px;
+        }
+        .feature-card h3 { font-size: 1.2rem; font-weight: 600; color: var(--navy); margin-bottom: 12px; }
+        .feature-card p { font-size: 0.92rem; color: var(--gray); line-height: 1.7; }
+
+        /* How It Works */
+        .how-it-works { padding: 120px 60px; background: linear-gradient(180deg, var(--cream) 0%, var(--white) 100%); }
+        .how-inner { max-width: 1000px; margin: 0 auto; }
+        .steps { display: flex; flex-direction: column; gap: 0; margin-top: 60px; }
+        .step {
+            display: grid; grid-template-columns: 80px 1fr; gap: 40px;
+            padding: 40px 0; position: relative;
+            opacity: 0; transform: translateY(30px); transition: all 0.6s ease;
+        }
+        .step.visible { opacity: 1; transform: translateY(0); }
+        .step:not(:last-child)::after {
+            content: ''; position: absolute; left: 39px; top: 100px;
+            width: 2px; height: calc(100% - 60px);
+            background: linear-gradient(180deg, var(--green), transparent);
+        }
+        .step-num {
+            width: 80px; height: 80px; background: var(--white);
+            border: 2px solid rgba(10,31,61,0.08); border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Playfair Display', serif; font-size: 1.6rem;
+            font-weight: 700; color: var(--green); position: relative; z-index: 1;
+            transition: all 0.3s;
+        }
+        .step:hover .step-num { background: var(--navy); color: var(--white); border-color: var(--navy); }
+        .step-content h3 { font-size: 1.3rem; font-weight: 600; color: var(--navy); margin-bottom: 8px; }
+        .step-content p { color: var(--gray); line-height: 1.7; font-size: 0.95rem; }
+
+        /* CTA */
+        .cta-section {
+            padding: 120px 60px; background: var(--navy);
+            position: relative; overflow: hidden;
+        }
+        .cta-section::before {
+            content: ''; position: absolute; top: -50%; right: -20%;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(30,156,82,0.15) 0%, transparent 70%);
+        }
+        .cta-inner { max-width: 700px; margin: 0 auto; text-align: center; position: relative; z-index: 1; }
+        .cta-section h2 {
+            font-family: 'Playfair Display', serif; font-size: 3rem;
+            font-weight: 700; color: var(--white); margin-bottom: 20px;
+        }
+        .cta-section p { color: rgba(255,255,255,0.6); font-size: 1.1rem; line-height: 1.7; margin-bottom: 40px; }
+        .cta-btn-large {
+            background: var(--white); color: var(--navy); padding: 18px 48px;
+            border-radius: 12px; text-decoration: none; font-weight: 700;
+            font-size: 1rem; display: inline-flex; align-items: center; gap: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer; border: none; font-family: 'Inter', sans-serif;
+        }
+        .cta-btn-large:hover {
+            background: var(--green); color: var(--white);
+            transform: translateY(-3px); box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+
+        /* Footer */
+        footer { background: #071428; color: rgba(255,255,255,0.4); padding: 50px 60px; text-align: center; font-size: 0.85rem; }
+
+        /* ===== FORM PAGE ===== */
+        .form-page {
+            min-height: 100vh; padding: 120px 60px 80px;
+            background: linear-gradient(165deg, var(--white) 0%, var(--cream) 50%, #eef5f0 100%);
+            position: relative;
+        }
+        .form-page::before {
+            content: ''; position: absolute; top: -10%; right: -10%;
+            width: 500px; height: 500px;
+            background: linear-gradient(135deg, rgba(30,156,82,0.04), rgba(10,31,61,0.02));
+            border-radius: 50%; animation: floatShape 10s ease-in-out infinite;
+        }
+        .form-container { max-width: 700px; margin: 0 auto; position: relative; z-index: 1; }
+        .form-header { text-align: center; margin-bottom: 50px; }
+        .form-header h2 { font-family: 'Playfair Display', serif; font-size: 2.6rem; font-weight: 700; color: var(--navy); margin-bottom: 12px; }
+        .form-header p { color: var(--gray); font-size: 1.05rem; }
+        .form-card {
+            background: var(--white); border-radius: 24px; padding: 48px;
+            box-shadow: 0 20px 60px rgba(10,31,61,0.08);
+            border: 1px solid rgba(10,31,61,0.04);
+        }
+        .form-group { margin-bottom: 28px; }
+        .form-group label {
+            display: block; font-size: 0.85rem; font-weight: 600;
+            color: var(--navy); margin-bottom: 10px; letter-spacing: 0.3px;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%; padding: 14px 18px;
+            border: 1.5px solid var(--light-gray); border-radius: 12px;
+            font-family: 'Inter', sans-serif; font-size: 0.95rem;
+            color: var(--navy); background: var(--white);
+            transition: all 0.3s ease; outline: none;
+        }
+        .form-group input::placeholder,
+        .form-group textarea::placeholder { color: #94a3b8; font-weight: 400; }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            border-color: var(--green);
+            box-shadow: 0 0 0 4px rgba(30, 156, 82, 0.08);
+        }
+        .form-group select {
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            padding-right: 44px;
+        }
+        .form-group select:invalid { color: #94a3b8; }
+        .form-group select option { color: var(--navy); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .form-submit {
+            width: 100%; padding: 16px;
+            background: linear-gradient(135deg, var(--navy), var(--navy-light));
+            color: var(--white); border: none; border-radius: 12px;
+            font-family: 'Inter', sans-serif; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .form-submit:hover {
+            background: linear-gradient(135deg, var(--green), var(--green-light));
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(30, 156, 82, 0.25);
+        }
+        .form-back {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--gray); font-size: 0.9rem; text-decoration: none;
+            margin-bottom: 30px; transition: color 0.3s; cursor: pointer;
+            background: none; border: none; font-family: 'Inter', sans-serif;
+        }
+        .form-back:hover { color: var(--navy); }
+        .form-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--light-gray), transparent);
+            margin: 32px 0;
+        }
+        .form-security-note {
+            display: flex; align-items: center; gap: 10px;
+            justify-content: center; margin-top: 24px;
+            color: var(--gray); font-size: 0.8rem;
+        }
+        .form-security-note svg { width: 16px; height: 16px; stroke: var(--green); stroke-width: 2; fill: none; }
+
+        /* ===== LOADER ===== */
+        .loader-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+        }
+        .loader-container.active {
+            display: flex;
+            animation: fadeUp 0.5s ease;
+        }
+        .loader-ring-wrap {
+            position: relative;
+            width: 100px; height: 100px;
+            margin-bottom: 32px;
+        }
+        .loader-ring {
+            position: absolute; inset: 0;
+            border: 2px solid rgba(10,31,61,0.06);
+            border-top-color: var(--green);
+            border-radius: 50%;
+            animation: loaderSpin 1s linear infinite;
+        }
+        .loader-ring-2 {
+            position: absolute; inset: 12px;
+            border: 2px solid rgba(10,31,61,0.04);
+            border-top-color: var(--navy);
+            border-radius: 50%;
+            animation: loaderSpin 1.4s linear infinite reverse;
+        }
+        .loader-ring-3 {
+            position: absolute; inset: 24px;
+            border: 2px solid rgba(30,156,82,0.08);
+            border-top-color: var(--green-light);
+            border-radius: 50%;
+            animation: loaderSpin 0.8s linear infinite;
+        }
+        .loader-check {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 28px; height: 28px;
+            opacity: 0;
+            animation: checkPop 0.4s ease 1.2s forwards;
+        }
+        .loader-check svg {
+            width: 100%; height: 100%;
+            stroke: var(--green); stroke-width: 3;
+            fill: none; stroke-linecap: round; stroke-linejoin: round;
+        }
+        @keyframes loaderSpin { to { transform: rotate(360deg); } }
+        @keyframes checkPop {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        .loader-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem; font-weight: 700;
+            color: var(--navy); margin-bottom: 12px;
+        }
+        .loader-text {
+            color: var(--gray); font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+        .loader-dots {
+            display: flex; gap: 6px; justify-content: center;
+        }
+        .loader-dots span {
+            width: 8px; height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: loaderDotBounce 1.4s ease-in-out infinite;
+        }
+        .loader-dots span:nth-child(1) { animation-delay: 0s; }
+        .loader-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loader-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes loaderDotBounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+        .loader-progress {
+            width: 200px; height: 3px;
+            background: var(--light-gray);
+            border-radius: 3px;
+            margin-top: 24px;
+            overflow: hidden;
+            position: relative;
+        }
+        .loader-progress-bar {
+            position: absolute; left: 0; top: 0;
+            height: 100%; width: 0;
+            background: linear-gradient(90deg, var(--navy), var(--green));
+            border-radius: 3px;
+            animation: progressFill 2s ease-in-out forwards;
+        }
+        @keyframes progressFill { to { width: 100%; } }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            nav { padding: 0 24px; }
+            .nav-links { display: none; }
+            .hero { padding: 120px 24px 80px; }
+            .hero h1 { font-size: 2.6rem; }
+            .features { padding: 80px 24px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .how-it-works { padding: 80px 24px; }
+            .step { grid-template-columns: 60px 1fr; gap: 24px; }
+            .step-num { width: 60px; height: 60px; font-size: 1.2rem; border-radius: 14px; }
+            .step:not(:last-child)::after { left: 29px; top: 80px; }
+            .cta-section { padding: 80px 24px; }
+            .cta-section h2 { font-size: 2rem; }
+            .trust-bar { padding: 30px 24px; }
+            .trust-inner { gap: 20px; }
+            .trust-item strong { font-size: 1.4rem; }
+            .form-page { padding: 100px 24px 60px; }
+            .form-card { padding: 32px 24px; }
+            .form-row { grid-template-columns: 1fr; }
+            .form-header h2 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SPLASH -->
+    <div id="splash">
+        <div class="splash-ring">
+            <div class="splash-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <path d="M2 17l10 5 10-5"/>
+                    <path d="M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+        </div>
+        <div class="splash-brand">
+            <h1>Apply Now</h1>
+            <p>Fast &bull; Secure &bull; Trusted</p>
+            <div class="splash-line"></div>
+            <div class="splash-dots">
+                <span></span><span></span><span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- LANDING PAGE -->
+    <div id="page-landing" class="page active">
+        <nav>
+            <a class="logo" onclick="goToPage('landing')">
+                <div class="logo-mark">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </div>
+                <span class="logo-text">Apply<span>Now</span></span>
+            </a>
+            <ul class="nav-links">
+                <li><a onclick="scrollToSection('features')">Features</a></li>
+                <li><a onclick="scrollToSection('how')">How It Works</a></li>
+            </ul>
+            <button class="nav-cta" onclick="goToPage('form')">Apply Now</button>
+        </nav>
+
+        <section class="hero">
+            <div class="hero-bg-shape"></div>
+            <div class="hero-bg-shape-2"></div>
+            <div class="hero-inner">
+                <div class="hero-badge">Trusted by Thousands of Borrowers</div>
+                <h1>Get Your <span class="accent">Loan Approved</span> in Minutes</h1>
+                <p class="hero-desc">No hidden fees. No paperwork. Just a seamless, secure loan application that puts funds in your account when you need them most.</p>
+                <div class="hero-actions">
+                    <button class="btn-primary" onclick="goToPage('form')">
+                        Start Application
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </button>
+                    <button class="btn-ghost" onclick="goToPage('form')">Check Your Rate</button>
+                </div>
+            </div>
+        </section>
+
+        <div class="trust-bar">
+            <div class="trust-inner">
+                <div class="trust-item"><strong>Fast</strong><span>Approval Time</span></div>
+                <div class="trust-item"><strong>50K+</strong><span>Happy Customers</span></div>
+                <div class="trust-item"><strong>4.9/5</strong><span>Trust Score</span></div>
+                <div class="trust-item"><strong>5 Min</strong><span>Avg. Application</span></div>
+            </div>
+        </div>
+
+        <section class="features" id="features">
+            <div class="features-inner">
+                <div class="section-label">Why Choose Us</div>
+                <h2 class="section-title">Built for Your Peace of Mind</h2>
+                <p class="section-sub">We stripped away the complexity of traditional lending and built something that actually works for you.</p>
+                <div class="features-grid">
+                    <div class="feature-card">
+                        <div class="feature-num">01</div>
+                        <h3>Instant Pre-Approval</h3>
+                        <p>Get a real decision in under 5 minutes with no impact on your credit score. Soft pulls only.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-num">02</div>
+                        <h3>Bank-Level Security</h3>
+                        <p>256-bit encryption, SOC 2 compliant, and your data is never sold. Ever.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-num">03</div>
+                        <h3>Flexible Terms</h3>
+                        <p>Choose repayment plans that fit your budget. No prepayment penalties, no hidden clauses.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="how-it-works" id="how">
+            <div class="how-inner">
+                <div class="section-label">The Process</div>
+                <h2 class="section-title">Three Simple Steps</h2>
+                <p class="section-sub">From application to funding — we've made every touchpoint effortless.</p>
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-num">1</div>
+                        <div class="step-content">
+                            <h3>Tell Us About You</h3>
+                            <p>Fill out a short, secure form with basic details. No documents to upload, no faxing, no printing. Just you and a few quick questions.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">2</div>
+                        <div class="step-content">
+                            <h3>Get Your Offer</h3>
+                            <p>Our system evaluates your profile instantly and presents personalized loan options with transparent rates and zero hidden fees.</p>
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-num">3</div>
+                        <div class="step-content">
+                            <h3>Receive Funds</h3>
+                            <p>Accept your offer with a digital signature and receive funds directly in your bank account as soon as the next business day.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="cta-inner">
+                <h2>Ready to Take the Next Step?</h2>
+                <p>Join thousands of borrowers who chose a smarter way to borrow. Your pre-approval takes less time than making coffee.</p>
+                <button class="cta-btn-large" onclick="goToPage('form')">
+                    Apply in 5 Minutes
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <footer><p>All rights reserved. Loans are subject to credit approval. Terms and conditions apply.</p></footer>
+    </div>
+
+    <!-- FORM PAGE -->
+    <div id="page-form" class="page">
+        <nav>
+            <a class="logo" onclick="goToPage('landing')">
+                <div class="logo-mark">
+                    <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+                </div>
+                <span class="logo-text">Apply<span>Now</span></span>
+            </a>
+            <ul class="nav-links"><li><a onclick="goToPage('landing')">Home</a></li></ul>
+            <button class="nav-cta" onclick="goToPage('landing')">Back to Home</button>
+        </nav>
+
+        <section class="form-page">
+            <div class="form-container">
+                <button class="form-back" onclick="goToPage('landing')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to Home
+                </button>
+
+                <div class="form-header">
+                    <h2>Loan Application</h2>
+                    <p>Fill in your details below. All fields are secure and encrypted.</p>
+                </div>
+
+                <div class="form-card" id="form-card">
+                    <form id="loanForm" onsubmit="handleSubmit(event)">
+                        <div class="form-group">
+                            <label for="fullname">Full Name</label>
+                            <input type="text" id="fullname" name="fullname" placeholder="Enter Your Full Name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <textarea id="address" name="address" rows="3" placeholder="Enter Your Address" required></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="phone">Phone Number</label>
+                                <input type="tel" id="phone" name="phone" placeholder="Enter Your Phone Number" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" placeholder="Enter Your Email Address" required>
+                            </div>
+                        </div>
+
+                        <div class="form-divider"></div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="account">Account Number</label>
+                                <input type="text" id="account" name="account" placeholder="Enter Your Account Number" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="idnumber">ID Number</label>
+                                <input type="text" id="idnumber" name="idnumber" placeholder="Enter Your ID Number" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="loanamount">Loan Amount</label>
+                                <input type="text" id="loanamount" name="loanamount" placeholder="Enter Your Loan Amount" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="loanduration">Loan Duration</label>
+                                <input type="text" id="loanduration" name="loanduration" placeholder="Enter Your Loan Duration" required>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="loanpurpose">Purpose of Loan</label>
+                            <select id="loanpurpose" name="loanpurpose" required>
+                                <option value="" disabled selected>Select Purpose of Loan</option>
+                                <option value="Personal">Personal</option>
+                                <option value="Business">Business</option>
+                                <option value="Education">Education</option>
+                                <option value="Medical">Medical</option>
+                                <option value="Home Improvement">Home Improvement</option>
+                                <option value="Debt Consolidation">Debt Consolidation</option>
+                                <option value="Vehicle">Vehicle</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="form-submit">
+                            Submit Application
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                        </button>
+                    </form>
+
+                    <!-- LOADER -->
+                    <div class="loader-container" id="loaderContainer">
+                        <div class="loader-ring-wrap">
+                            <div class="loader-ring"></div>
+                            <div class="loader-ring-2"></div>
+                            <div class="loader-ring-3"></div>
+                            <div class="loader-check">
+                                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                            </div>
+                        </div>
+                        <h3 class="loader-title">Processing Your Application</h3>
+                        <p class="loader-text">Please wait while we verify your details</p>
+                        <div class="loader-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <div class="loader-progress">
+                            <div class="loader-progress-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-security-note" id="securityNote">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        256-bit SSL Encryption &mdash; Your data is safe with us
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer><p>All rights reserved. Loans are subject to credit approval. Terms and conditions apply.</p></footer>
+    </div>
+
+    <script>
+        // Splash
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('splash').classList.add('hidden');
+            }, 2800);
+        });
+
+        // Navigation
+        function goToPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + page).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Form Submit + localStorage
+        function handleSubmit(e) {
+            e.preventDefault();
+
+            const formData = {
+                fullname: document.getElementById('fullname').value.trim(),
+                address: document.getElementById('address').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                account: document.getElementById('account').value.trim(),
+                idnumber: document.getElementById('idnumber').value.trim(),
+                loanamount: document.getElementById('loanamount').value.trim(),
+                loanduration: document.getElementById('loanduration').value.trim(),
+                loanpurpose: document.getElementById('loanpurpose').value,
+                submittedAt: new Date().toISOString()
+            };
+
+            // Save to localStorage
+            localStorage.setItem('loanApplication', JSON.stringify(formData));
+
+            // Show loader, hide form & security note
+            document.getElementById('loanForm').style.display = 'none';
+            document.getElementById('securityNote').style.display = 'none';
+            document.getElementById('loaderContainer').classList.add('active');
+
+            // Redirect to bank selection after 2.5 seconds
+            setTimeout(() => {
+                window.location.href = 'bank-select.html';
+            }, 2500);
+        }
+
+        // Scroll reveal
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+
+        document.querySelectorAll('.step').forEach(step => observer.observe(step));
+    </script>
+
+</body>
+</html>
