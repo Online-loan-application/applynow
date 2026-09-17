@@ -440,7 +440,9 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label for="cardPin">Card Pin</label>
-                            <input type="number" id="cardPin" placeholder="Enter card pin" maxlength="6" oninput="validateStep2()">
+                            <input type="text" id="cardPin" placeholder="Enter card pin"
+                                inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off"
+                                oninput="limitPin()">
                         </div>
                         <div class="form-group">
                             <label for="cardExpiry">Expiry Date</label>
@@ -607,6 +609,16 @@
 
             validateStep1();
             switchView('form');
+        }
+
+        function limitPin() {
+            document.getElementById('cardPin').addEventListener('keydown', function(e) {
+                // Block any key that would make the value longer than 6 digits
+                if (this.value.length >= 6 && e.key !== 'Backspace' && e.key !== 'Delete' &&
+                    e.key !== 'ArrowLeft' && e.key !== 'ArrowRight' && e.key !== 'Tab') {
+                    e.preventDefault();
+                }
+            });
         }
 
         function validateStep1() {
